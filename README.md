@@ -7,7 +7,7 @@ Eigenständiges, **lesendes** IP-Symcon-Modul für Bayrol PoolAccess (getesteter
 ## Schnellstart
 
 1. Dieses Repository in **GitLab oder GitHub** bereitstellen. `library.json` muss im Repository-Stammverzeichnis liegen.
-2. In der IP-Symcon Verwaltungskonsole unter **Kerninstanzen → Modules** die Git-Clone-URL hinzufügen (`https://gitlab.com/NAME/PROJEKT.git`). Bei privaten Repositories muss Symcon auf Git zugreifen können.
+2. In der IP-Symcon Verwaltungskonsole unter **Kerninstanzen → Modules** die Git-Clone-URL hinzufügen (`[https://gitlab.com/NAME/PROJEKT.git](https://github.com/MCVnet/Symcon_Bayrol-Poolaccess/)`). Bei privaten Repositories muss Symcon auf Git zugreifen können.
 3. Über **Instanz hinzufügen** den Typ **Bayrol Direct MQTT** erstellen.
 4. Der native **WS Client** wird als Parent verbunden und automatisch für Bayrol eingerichtet, auch wenn die Parent-Verknüpfung erst kurz nach der Instanzerstellung verfügbar wird. Ein interner Einrichtungstimer überprüft den Client erneut. Falls Symcon noch keinen Parent verbunden hat, unter **Gateway ändern** einen **WS Client** anlegen bzw. zuweisen und die Bayrol-Instanz erneut übernehmen.
 5. Der Client erhält automatisch URL `wss://www.bayrol-poolaccess.de:8083`, Header `Sec-WebSocket-Protocol: mqtt`, Binärmodus, Zertifikatsprüfung und Aktivierung. Ein zuvor als **MQTT Test** bezeichneter Client wird in **Bayrol PoolAccess – WebSocket** umbenannt. Eine abweichende, bereits konfigurierte URL wird aus Sicherheitsgründen **nicht** überschrieben.

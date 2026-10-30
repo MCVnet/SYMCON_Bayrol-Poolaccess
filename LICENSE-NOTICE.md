@@ -1,0 +1,1 @@
+Das Modul wurde unabhängig für IP-Symcon erstellt und orientiert sich technisch an öffentlich verfügbarem Bayrol-PoolAccess-MQTT-Quellcode. Referenz: https://github.com/tdenolle/bayrol-poolaccess-mqtt (MIT-Lizenz). Bayrol ist eine Marke ihres jeweiligen Inhabers; keine offizielle Herstellerfreigabe behauptet.

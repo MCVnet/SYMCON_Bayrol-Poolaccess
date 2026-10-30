@@ -1,0 +1,112 @@
+{
+  "elements": [
+    {
+      "type": "Label",
+      "caption": "BAYROL POOLACCESS | Direkte MQTT-Anbindung. Nur lesender Zugriff. Zugangsdaten bleiben in der lokalen Instanz."
+    },
+    {
+      "type": "ExpansionPanel",
+      "caption": "1 · Gerätezugang",
+      "items": [
+        {
+          "type": "ValidationTextBox",
+          "name": "DeviceSerial",
+          "caption": "Seriennummer des Bayrol-Geräts"
+        },
+        {
+          "type": "PasswordTextBox",
+          "name": "DeviceToken",
+          "caption": "PoolAccess-Gerätetoken (32 Hex-Zeichen)"
+        },
+        {
+          "type": "Label",
+          "caption": "Das Empfangstopic wird automatisch gebildet: d02/<Seriennummer>/v/#. MQTT-Passwort und QoS sind bereits passend vorkonfiguriert."
+        }
+      ]
+    },
+    {
+      "type": "ExpansionPanel",
+      "caption": "2 · Verbindung und Messwertabruf",
+      "items": [
+        {
+          "type": "CheckBox",
+          "name": "Active",
+          "caption": "Dauerverbindung aktivieren"
+        },
+        {
+          "type": "CheckBox",
+          "name": "ActiveReads",
+          "caption": "Messwerte aktiv anfordern"
+        },
+        {
+          "type": "NumberSpinner",
+          "name": "ReadInterval",
+          "caption": "Abfrageintervall in Sekunden (60–3600)"
+        },
+        {
+          "type": "NumberSpinner",
+          "name": "StaleAfter",
+          "caption": "Veraltete Messwerte nach Sekunden melden"
+        }
+      ]
+    },
+    {
+      "type": "ExpansionPanel",
+      "caption": "3 · Visualisierung",
+      "items": [
+        {
+          "type": "Select",
+          "name": "VisualTheme",
+          "caption": "Visu-Design",
+          "options": [
+            {
+              "caption": "Light & Clean",
+              "value": "light"
+            },
+            {
+              "caption": "Dark & Premium",
+              "value": "dark"
+            }
+          ]
+        },
+        {
+          "type": "Label",
+          "caption": "Die Variable „Poolübersicht“ zeigt Messwerte und einen aufklappbaren Detailbereich."
+        }
+      ]
+    },
+    {
+      "type": "ExpansionPanel",
+      "caption": "4 · Diagnose und Wartung",
+      "items": [
+        {
+          "type": "CheckBox",
+          "name": "ShowDiagnostics",
+          "caption": "Technische Diagnosevariablen anzeigen"
+        },
+        {
+          "type": "Label",
+          "caption": "Bei Problemen zuerst WS-Client, Anmeldung, Subscription und „Antworten zur letzten Anfrage“ prüfen."
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "type": "Button",
+      "caption": "Verbindung prüfen",
+      "onClick": "echo BAYMQ_Refresh($id) ? GetValueString(IPS_GetObjectIDByIdent(\"Result\", $id)) : GetValueString(IPS_GetObjectIDByIdent(\"Error\", $id));"
+    },
+    {
+      "type": "Button",
+      "caption": "Messwerte jetzt abrufen",
+      "onClick": "BAYMQ_RequestMeasurements($id); echo GetValueString(IPS_GetObjectIDByIdent(\"ReadStatus\", $id));"
+    },
+    {
+      "type": "Button",
+      "caption": "Visu aktualisieren",
+      "onClick": "BAYMQ_UpdateDashboard($id); echo GetValueString(IPS_GetObjectIDByIdent(\"DataQuality\", $id));"
+    }
+  ],
+  "status": []
+}

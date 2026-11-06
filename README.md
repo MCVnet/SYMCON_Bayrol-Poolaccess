@@ -1,6 +1,6 @@
 # Bayrol PoolAccess – IP-Symcon
 
-![Release](https://img.shields.io/badge/release-v1.0.0-167c9c) ![PHP lint](https://img.shields.io/badge/check-PHP%20syntax-2e9656)
+![Release](https://img.shields.io/badge/release-v1.0.1-167c9c) ![PHP lint](https://img.shields.io/badge/check-PHP%20syntax-2e9656)
 
 **Direkte, lesende Cloud-Anbindung** einer BAYROL Automatic Cl-pH an IP-Symcon via MQTT over WebSocket. Keine externe MQTT-Bridge, kein Home Assistant und kein eigener MQTT-Broker erforderlich.
 
@@ -69,6 +69,9 @@ Die MQTT-Verbindung ist **MQTT 3.1.1 mit WebSocket-Subprotokoll `mqtt`**, Benutz
 Alte Identifikatoren bleiben für bestehende Automationen und historische Daten erhalten. Ein initiales `0` ist nicht zwangsläufig ein gültiger Messwert; zur Validierung Empfangs-Flags und Zeitstempel prüfen. Rohcodes nicht ohne verlässliche Codeliste übersetzen.
 
 ## Visu
+
+Ab Version 1.0.1 passt sich die HTMLBox an ihre verfügbare Breite an: eine bis drei Messwertspalten, fluide Größen und umbrechende Texte. Beide Themes und die aufklappbaren Details bleiben erhalten. Schmale oder niedrige Kacheln benötigen bei Bedarf vertikales Scrollen; die Kachelhöhe wird in Symcon eingestellt. Details zu Änderungen und Prüfung: [Responsive Tests](docs/RESPONSIVE-TESTS.md).
+
 
 - Kompaktes Dashboard mit pH, Redox, Wassertemperatur und zwei Themes (Hell/Dunkel).
 - Status und Dosierleistung; Detailbereich unter **Anlagendetails anzeigen** aufklappbar.

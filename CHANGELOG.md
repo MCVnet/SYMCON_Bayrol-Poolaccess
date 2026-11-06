@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.1 (2026-11-07)
+
+- HTMLBox für schmale Symcon-Kacheln, Smartphones, Tablets und Desktop überarbeitet.
+- Flexibles Messwertraster, fluide Größen und Abstände; umbrechende Kopfzeile und Statusanzeige.
+- Details unter 361 px einspaltig; lange Rohcodes und Alarme umbrechen ohne Abschneiden.
+- Light & Clean, Dark & Premium, Icons und native Details erhalten; MQTT unverändert.
+- Testumfang und Grenzen: `docs/RESPONSIVE-TESTS.md`.
+
 ## 1.0.0 (GitHub Release, 2026-10-30)
 
 - GitHub-taugliche SDK-Struktur, konsistente Dokumentation, Installationsanleitung und Architekturhinweise.

@@ -514,7 +514,44 @@ class BayrolDirectMQTT extends IPSModule
         $alarmText = $alarms !== '' ? $alarms : 'Noch keine Alarmdaten empfangen';
         $productImage = 'https://www.bayrol.de/sites/bayrol/files/product_file/2025-06/Product-Visual_Automatic-Cl-pH_BAYROL-Technik_0.png';
         $css = <<<'CSS'
-*{box-sizing:border-box}body{margin:0;padding:11px;background:var(--bg);color:var(--ink);font:13px -apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}.light{--bg:#f3f7fa;--ink:#152e42;--muted:#71879b;--tile:#fff;--line:#dce7ef;--hero:#e6f3f7;--accent:#078faa;--ok:#099876;--shadow:0 4px 16px rgba(28,63,88,.04)}.dark{--bg:#0b1521;--ink:#edf6fc;--muted:#92a9ba;--tile:#152a3b;--line:#2b4658;--hero:#1b3545;--accent:#5bdac7;--ok:#62ddad;--shadow:none}.shell{max-width:1000px;margin:auto}.header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}.header h1{font-size:20px;letter-spacing:-.6px;margin:0;font-weight:780}.subtitle{font-size:10px;color:var(--muted);margin-top:3px}.pill{display:flex;gap:6px;align-items:center;padding:7px 9px;border-radius:30px;background:var(--tile);border:1px solid var(--line);color:var(--ok);font-size:10px;font-weight:750;white-space:nowrap}.dot{width:7px;height:7px;border-radius:50%;background:currentColor}.hero{display:flex;align-items:center;gap:20px;background:var(--hero);border-radius:15px;padding:11px 18px;margin-bottom:10px;min-height:115px;overflow:hidden}.device{width:93px;height:104px;flex:none;display:flex;justify-content:center;align-items:center}.device img{max-width:95px;max-height:104px;object-fit:contain;filter:drop-shadow(0 9px 12px #172e3b24)}.hero-sub{font-size:10px;font-weight:750;color:var(--muted);letter-spacing:1px}.hero-title{font-size:22px;font-weight:800;letter-spacing:-.6px;margin:5px 0}.hero-foot{color:var(--accent);font-size:11px;font-weight:700}.metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.metric{background:var(--tile);border:1px solid var(--line);box-shadow:var(--shadow);border-radius:14px;padding:13px;min-width:0}.metric-top{display:flex;align-items:center;gap:7px;color:var(--muted);font-weight:600;font-size:11px}.metric-icon{color:#04a9c8;font-size:22px;line-height:1}.metric.rx .metric-icon{color:#ff8659}.metric.temp .metric-icon{color:#31a9e6}.number{margin:14px 0 10px;white-space:nowrap;font-size:clamp(23px,4vw,33px);font-weight:800;letter-spacing:-.8px}.number small{font-size:11px;letter-spacing:0;color:var(--muted);font-weight:600;margin-left:4px}.quality{font-size:10px;font-weight:650;color:var(--ok)}.quality.stale{color:#d99135}.quality span{color:var(--muted);font-weight:400}.strip{display:flex;flex-wrap:wrap;gap:15px;margin:10px 2px;color:var(--muted);font-size:11px}.strip strong{color:var(--ink);margin-left:4px}details{background:var(--tile);border:1px solid var(--line);border-radius:13px;overflow:hidden}summary{list-style:none;padding:13px;display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:750;cursor:pointer}summary::-webkit-details-marker{display:none}.chevron{font-size:18px;color:var(--accent)}details[open] .chevron{transform:rotate(180deg)}.contents{border-top:1px solid var(--line);padding:7px 13px 13px}.line{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--line);font-size:11px}.line span{color:var(--muted)}.line b{text-align:right;overflow-wrap:anywhere}.alarm{margin-top:12px;font-size:11px;color:var(--muted);white-space:pre-wrap;overflow-wrap:anywhere}.notice{font-size:10px;color:var(--muted);margin-top:10px}@media(max-width:530px){body{padding:7px}.hero{padding:9px;gap:10px;min-height:90px}.device{height:90px;width:70px}.device img{max-height:87px;max-width:70px}.hero-title{font-size:18px}.metrics{gap:6px}.metric{padding:10px 8px}.number{font-size:22px;margin:11px 0}.number small{display:block;font-size:10px;margin:0}.metric-top{gap:3px;font-size:9px}.metric-icon{font-size:16px}.quality{font-size:9px}.quality span{display:none}.header h1{font-size:17px}}
+/* Responsive HTMLBox: viewport follows the available Symcon tile width. */
+*,*::before,*::after{box-sizing:border-box}
+html{font-size:16px}
+body{margin:0;padding:clamp(6px,2vw,20px);background:var(--bg);color:var(--ink);font:clamp(12px,1.4vw,14px)/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;overflow-wrap:anywhere}
+.light{--bg:#f3f7fa;--ink:#152e42;--muted:#71879b;--tile:#fff;--line:#dce7ef;--hero:#e6f3f7;--accent:#078faa;--ok:#099876;--shadow:0 4px 16px rgba(28,63,88,.04)}.dark{--bg:#0b1521;--ink:#edf6fc;--muted:#92a9ba;--tile:#152a3b;--line:#2b4658;--hero:#1b3545;--accent:#5bdac7;--ok:#62ddad;--shadow:none}
+.shell{width:100%;max-width:1440px;min-width:0;margin-inline:auto}
+.header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 16px;margin-bottom:clamp(10px,2vw,20px)}
+.header>div{flex:1 1 220px;min-width:0}
+.header h1{font-size:clamp(18px,2.8vw,28px);line-height:1.2;letter-spacing:-.4px;margin:0;font-weight:780}
+.subtitle{font-size:clamp(11px,1.3vw,13px);color:var(--muted);margin-top:4px}
+.pill{display:inline-flex;max-width:100%;gap:6px;align-items:center;padding:7px 10px;border-radius:30px;background:var(--tile);border:1px solid var(--line);color:var(--ok);font-size:12px;font-weight:750}
+.dot{width:7px;height:7px;flex:none;border-radius:50%;background:currentColor}
+.hero{display:flex;flex-wrap:wrap;align-items:center;gap:clamp(10px,3vw,28px);background:var(--hero);border-radius:15px;padding:clamp(10px,2vw,24px);margin-bottom:clamp(10px,1.5vw,18px)}
+.hero>div:last-child{flex:1 1 140px;min-width:0}
+.device{width:clamp(64px,12vw,110px);max-width:100%;height:clamp(80px,14vw,124px);flex:0 1 auto;display:flex;justify-content:center;align-items:center}
+.device img{display:block;max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(0 9px 12px #172e3b24)}
+.hero-sub{font-size:11px;font-weight:750;color:var(--muted);letter-spacing:1px}
+.hero-title{font-size:clamp(20px,3vw,32px);line-height:1.2;font-weight:800;letter-spacing:-.4px;margin:5px 0}
+.hero-foot{color:var(--accent);font-size:clamp(12px,1.4vw,14px);font-weight:700}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:clamp(8px,1.5vw,18px)}
+.metric{background:var(--tile);border:1px solid var(--line);box-shadow:var(--shadow);border-radius:14px;padding:clamp(12px,2vw,24px);min-width:0}
+.metric-top{display:flex;align-items:center;gap:7px;color:var(--muted);font-weight:600;font-size:clamp(12px,1.4vw,15px)}
+.metric-label{min-width:0}
+.metric-icon{flex:none;color:#04a9c8;font-size:clamp(20px,2.5vw,28px);line-height:1}
+.metric.rx .metric-icon{color:#ff8659}.metric.temp .metric-icon{color:#31a9e6}
+.number{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px;margin:clamp(12px,2vw,24px) 0 10px;font-size:clamp(28px,4vw,46px);line-height:1.2;font-weight:800;letter-spacing:-.8px}
+.number small{font-size:13px;letter-spacing:0;color:var(--muted);font-weight:600}
+.quality{font-size:12px;font-weight:650;color:var(--ok)}.quality.stale{color:#d99135}.quality span{color:var(--muted);font-weight:400}
+.strip{display:flex;flex-wrap:wrap;gap:8px 20px;margin:clamp(10px,2vw,20px) 2px;color:var(--muted);font-size:12px}.strip>span{min-width:0}.strip strong{color:var(--ink);margin-left:4px}
+details{background:var(--tile);border:1px solid var(--line);border-radius:13px;min-width:0}
+summary{list-style:none;padding:clamp(12px,2vw,20px);min-height:44px;display:flex;gap:12px;justify-content:space-between;align-items:center;font-size:clamp(12px,1.5vw,15px);font-weight:750;cursor:pointer;border-radius:13px}
+summary::-webkit-details-marker{display:none}summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+summary>span:first-child{min-width:0}.chevron{flex:none;font-size:18px;color:var(--accent)}details[open] .chevron{transform:rotate(180deg)}
+.contents{border-top:1px solid var(--line);padding:7px clamp(12px,2vw,20px) 16px}
+.line{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start;gap:6px 16px;padding:10px 0;border-bottom:1px solid var(--line);font-size:12px}.line>*{min-width:0}.line span{color:var(--muted)}.line b{text-align:right;overflow-wrap:anywhere}
+.alarm{margin-top:12px;font-size:12px;color:var(--muted);white-space:pre-wrap;overflow-wrap:anywhere}.notice{font-size:11px;color:var(--muted);margin-top:10px}
+@media(max-width:360px){.line{grid-template-columns:minmax(0,1fr)}.line b{text-align:left}.header>div{flex-basis:100%}}
+@media(min-width:1000px){.line{grid-template-columns:minmax(0,2fr) minmax(0,3fr)}}
 CSS;
         $onlineText = $online ? 'MQTT verbunden' : 'Nicht verbunden';
         $phDose = GetValueInteger($this->GetIDForIdent('PHDoseRate'));

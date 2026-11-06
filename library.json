@@ -3,7 +3,7 @@
   "author": "Bayrol PoolAccess Symcon Community",
   "name": "Bayrol PoolAccess – Direct MQTT",
   "url": "https://github.com/tdenolle/bayrol-poolaccess-mqtt",
-  "version": "1.0.0",
-  "build": 100,
+  "version": "1.0.1",
+  "build": 101,
   "date": 0
 }

@@ -74,6 +74,16 @@ class BayrolDirectMQTT extends IPSModule
             $this->SetDiagnostic('StreamState', 'Deaktiviert');
             return;
         }
+        $state = $this->GetBuffer('MQTTState');
+        // Applying display or diagnostic settings must not send CONNECT again on the same session.
+        if (in_array($state, ['connecting', 'subscribing', 'subscribed'], true)
+            && $this->HasActiveParent()
+            && $this->GetBuffer('MQTTConnectionKey') === $this->MQTTConnectionKey()) {
+            if ($state === 'subscribed') {
+                $this->SetDiagnostic('StreamState', 'Dauerempfang aktiv');
+            }
+            return;
+        }
         $this->SetBuffer('MQTTState', 'waiting');
         $this->SetBuffer('MQTTBuffer', '');
         $this->SetBuffer('LastMQTTPacket', '0');
@@ -148,6 +158,14 @@ class BayrolDirectMQTT extends IPSModule
         return GetValueInteger($this->GetIDForIdent($ident));
     }
 
+    private function MQTTConnectionKey(): string
+    {
+        $parent = IPS_GetInstance($this->InstanceID)['ConnectionID'];
+        $serial = trim($this->ReadPropertyString('DeviceSerial'));
+        $token = trim($this->ReadPropertyString('DeviceToken'));
+        return hash('sha256', $parent . "\0" . $serial . "\0" . $token);
+    }
+
     private function sendPacket(string $packet): void
     {
         // Symcon Simple dataflow transports binary bytes as Latin-1 mapped to UTF-8.
@@ -185,6 +203,7 @@ class BayrolDirectMQTT extends IPSModule
             $this->SetBuffer('StableClientId', $clientId);
         }
         $connect = $this->mqttString('MQTT') . chr(4) . chr(0xC0) . pack('n', 60) . $this->mqttString($clientId) . $this->mqttString($token) . $this->mqttString('*');
+        $this->SetBuffer('MQTTConnectionKey', $this->MQTTConnectionKey());
         $this->SetBuffer('MQTTState', 'connecting');
         $this->SetBuffer('AutoReadQueued', '0');
         $this->SetBuffer('LastPing', (string)time());

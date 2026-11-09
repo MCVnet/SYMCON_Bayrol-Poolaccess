@@ -48,7 +48,7 @@ Ab Version 1.0.2 wird **IP-Symcon 8.2 oder neuer** benötigt.
 | 3. Visu | VisualTheme | `light` = Light & Clean / `dark` = Dark & Premium |
 | 4. Diagnose | ShowDiagnostics | Aus. Legt bei Bedarf 20 technische Diagnosevariablen an. |
 
-Die Sichtbarkeit angelegter Diagnosevariablen lässt sich im Objektbaum einstellen. Beim Abschalten werden diese Variablen gelöscht. Beim erneuten Einschalten erhalten sie neue Objekt-IDs. Grundstatus, Messwerte, Zeitstempel und Visu sind unabhängig vom Diagnosemodus.
+Die Sichtbarkeit angelegter Diagnosevariablen lässt sich im Objektbaum einstellen. Beim Abschalten werden diese Variablen gelöscht. Beim erneuten Einschalten erhalten sie neue Objekt-IDs. Grundstatus, Messwerte, Zeitstempel und Visu sind unabhängig vom Diagnosemodus. Ab Version 1.0.2 bleibt die laufende MQTT-Verbindung beim Umschalten der Diagnose erhalten.
 
 Die MQTT-Verbindung ist **MQTT 3.1.1 mit WebSocket-Subprotokoll `mqtt`**, Benutzername = Token, Passwort `*`, mit persistenter Session. Empfangsthema `d02/<Seriennummer>/v/#`, aktive Leseanfragen werden nur an bekannte `g/`-Topics gesendet.
 

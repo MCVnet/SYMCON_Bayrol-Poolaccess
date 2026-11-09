@@ -4,7 +4,7 @@
   "name": "Bayrol PoolAccess – Direct MQTT",
   "url": "https://github.com/tdenolle/bayrol-poolaccess-mqtt",
   "version": "1.0.2",
-  "build": 102,
+  "build": 103,
   "date": 0,
   "compatibility": {
     "version": "8.2"

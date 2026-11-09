@@ -95,12 +95,12 @@
     {
       "type": "Button",
       "caption": "Verbindung prüfen",
-      "onClick": "echo BAYMQ_Refresh($id) ? GetValueString(IPS_GetObjectIDByIdent(\"Result\", $id)) : GetValueString(IPS_GetObjectIDByIdent(\"Error\", $id));"
+      "onClick": "echo BAYMQ_Refresh($id) ? GetValueString(IPS_GetObjectIDByIdent(\"Stage\", $id)) : GetValueString(IPS_GetObjectIDByIdent(\"Error\", $id));"
     },
     {
       "type": "Button",
       "caption": "Messwerte jetzt abrufen",
-      "onClick": "BAYMQ_RequestMeasurements($id); echo GetValueString(IPS_GetObjectIDByIdent(\"ReadStatus\", $id));"
+      "onClick": "echo BAYMQ_RequestMeasurements($id) ? \"Messwertanfragen gesendet.\" : \"Messwertanfragen konnten nicht gesendet werden. MQTT-Verbindung prüfen.\";"
     },
     {
       "type": "Button",

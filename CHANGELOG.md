@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.3 (2026-11-09)
+
+- Optionale Mini-Kachel mit pH, Redox, Wassertemperatur und Verbindungsstatus in beiden Themes.
+- Frei einstellbarer Kacheltitel mit Standard „Bayrol PoolAccess“. Dosierung, Alarme und Datenqualität sind aufklappbar.
+
 ## 1.0.2 (2026-11-09)
 
 - Die Management-Konsole wählt oder erstellt den WS Client anhand von `GetCompatibleParents()`. Mindestversion ist IP-Symcon 8.2.

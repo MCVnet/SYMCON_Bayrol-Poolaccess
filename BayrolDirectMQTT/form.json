@@ -70,6 +70,26 @@
           ]
         },
         {
+          "type": "Select",
+          "name": "VisualLayout",
+          "caption": "Kachellayout",
+          "options": [
+            {
+              "caption": "Standard",
+              "value": "standard"
+            },
+            {
+              "caption": "Mini-Kachel",
+              "value": "mini"
+            }
+          ]
+        },
+        {
+          "type": "ValidationTextBox",
+          "name": "TileTitle",
+          "caption": "Titel der Mini-Kachel (Standard: Bayrol PoolAccess)"
+        },
+        {
           "type": "Label",
           "caption": "Die Variable „Poolübersicht“ zeigt Messwerte und einen aufklappbaren Detailbereich."
         }

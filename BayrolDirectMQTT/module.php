@@ -14,6 +14,8 @@ class BayrolDirectMQTT extends IPSModule
         $this->RegisterPropertyString('SubscribeTopic', '');
         $this->RegisterPropertyBoolean('ShowDiagnostics', false);
         $this->RegisterPropertyString('VisualTheme', 'light');
+        $this->RegisterPropertyString('VisualLayout', 'standard');
+        $this->RegisterPropertyString('TileTitle', 'Bayrol PoolAccess');
         $this->RegisterPropertyInteger('StaleAfter', 900);
         $this->RegisterPropertyInteger('Interval', 300);
         $this->RegisterPropertyBoolean('Active', false);
@@ -449,6 +451,7 @@ class BayrolDirectMQTT extends IPSModule
             ['Wassertemperatur', 'WaterTemperature', 'LastTemperature', 'HasTemperature', '°C'],
         ];
         $theme = $this->ReadPropertyString('VisualTheme') === 'dark' ? 'dark' : 'light';
+        $mini = $this->ReadPropertyString('VisualLayout') === 'mini';
         $cards = '';
         $health = [];
         $esc = static fn(string $v): string => htmlspecialchars($v, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
@@ -463,8 +466,10 @@ class BayrolDirectMQTT extends IPSModule
             $detail = $valid && $ts !== false ? date('d.m. H:i', $ts) : 'Nicht empfangen';
             $icon = $ident === 'PH' ? '◉' : ($ident === 'Redox' ? '〰' : '❄');
             $tone = $ident === 'PH' ? 'ph' : ($ident === 'Redox' ? 'rx' : 'temp');
-            $cards .= '<div class="metric ' . $tone . '"><div class="metric-top"><span class="metric-icon">' . $icon . '</span><span class="metric-label">' . $esc($title) . '</span></div>'
-               . '<div class="number">' . $esc($value) . '<small>' . $esc($unit) . '</small></div><div class="quality ' . ($stale ? 'stale' : 'fresh') . '">● ' . $esc($quality) . ' <span>· ' . $esc($detail) . '</span></div></div>';
+            $label = $mini && $ident === 'WaterTemperature' ? 'Wasser' : $title;
+            $displayUnit = $mini && $ident === 'PH' ? '' : '<small>' . $esc($unit) . '</small>';
+            $cards .= '<div class="metric ' . $tone . '"><div class="metric-top"><span class="metric-icon">' . $icon . '</span><span class="metric-label">' . $esc($label) . '</span></div>'
+               . '<div class="number">' . $esc($value) . $displayUnit . '</div><div class="quality ' . ($stale ? 'stale' : 'fresh') . '">● ' . $esc($quality) . ' <span>· ' . $esc($detail) . '</span></div></div>';
             $health[] = $title . ': ' . $quality;
         }
         $this->SetValue('DataQuality', implode(' | ', $health));
@@ -527,15 +532,52 @@ summary>span:first-child{min-width:0}.chevron{flex:none;font-size:18px;color:var
 .alarm{margin-top:12px;font-size:12px;color:var(--muted);white-space:pre-wrap;overflow-wrap:anywhere}.notice{font-size:11px;color:var(--muted);margin-top:10px}
 @media(max-width:360px){.line{grid-template-columns:minmax(0,1fr)}.line b{text-align:left}.header>div{flex-basis:100%}}
 @media(min-width:1000px){.line{grid-template-columns:minmax(0,2fr) minmax(0,3fr)}}
+body.mini-layout{padding:4px;font-size:13px;line-height:1.35}
+.mini-layout .shell{max-width:280px;padding:7px 10px;border:1px solid var(--line);border-radius:9px;background:var(--mini-bg)}
+.mini-layout.light{--mini-bg:#f3f7fa;--mini-muted:#486579;--mini-ok:#08735d;--mini-alert:#983710;--mini-ph:#007c92;--mini-rx:#ad451f;--mini-temp:#156c9c}
+.mini-layout.dark{--mini-bg:#152a3b;--mini-muted:#b2c5d3;--mini-ok:#62ddad;--mini-alert:#ffc296;--mini-ph:#5bdac7;--mini-rx:#ff8659;--mini-temp:#69c4f0}
+.mini-header{display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 8px;font-size:11px}
+.mini-header strong{min-width:0}
+.mini-status{color:var(--mini-ok)}
+.mini-status.offline{color:var(--mini-alert)}
+.mini-layout .metrics{grid-template-columns:repeat(auto-fit,minmax(min(100%,66px),1fr));gap:5px;margin:5px 0 4px}
+.mini-layout .metric{background:none;border:0;border-radius:0;box-shadow:none;padding:0}
+.mini-layout .metric + .metric{border-inline-start:1px solid var(--line);padding-inline-start:6px}
+.mini-layout .metric-top{gap:4px;color:var(--mini-muted);font-size:11px}
+.mini-layout .metric .metric-icon{font-size:11px;color:var(--mini-ph)}
+.mini-layout .metric.rx .metric-icon{color:var(--mini-rx)}
+.mini-layout .metric.temp .metric-icon{color:var(--mini-temp)}
+.mini-layout .number{gap:0 3px;margin:0;font-size:15px;letter-spacing:0;font-variant-numeric:tabular-nums}
+.mini-layout .number small{font-size:11px;color:var(--mini-muted)}
+.mini-layout .quality{display:none}
+.mini-layout details{background:none;border:0}
+.mini-layout summary{display:list-item;list-style:disclosure-closed;padding:0;min-height:18px;color:var(--mini-muted);font-size:11px}
+.mini-layout details[open] summary{list-style:disclosure-open}
+.mini-layout summary::-webkit-details-marker{display:inline}
+.mini-layout .contents{padding:4px 0 0}
+.mini-layout .line{padding:4px 0}
+.mini-layout .line span,.mini-layout .alarm,.mini-layout .notice{color:var(--mini-muted)}
+@media(pointer:coarse){.mini-layout summary{min-height:44px;align-content:center}}
 CSS;
         $onlineText = $online ? 'MQTT verbunden' : 'Nicht verbunden';
         $phDose = GetValueInteger($this->GetIDForIdent('PHDoseRate'));
         $rxDose = GetValueInteger($this->GetIDForIdent('RedoxDoseRate'));
-        $html = '<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>' . $css . '</style></head><body class="' . $theme . '"><main class="shell">'
-            . '<header class="header"><div><h1>Bayrol Automatic Cl-pH</h1><div class="subtitle">Poolübersicht · IP-Symcon</div></div><span class="pill"><span class="dot"></span>' . $onlineText . '</span></header>'
-            . '<section class="hero"><div class="device"><img src="' . $esc($productImage) . '" alt="Bayrol Automatic Cl-pH" loading="lazy"></div><div><div class="hero-sub">BAYROL AUTOMATIC</div><div class="hero-title">Wasserqualität</div><div class="hero-foot">● ' . ($online ? 'Anlage verbunden' : 'Keine MQTT-Verbindung') . '</div></div></section>'
-            . '<section class="metrics">' . $cards . '</section><div class="strip"><span>pH-Dosierung <strong>' . $phDose . ' %</strong></span><span>Redox-Dosierung <strong>' . $rxDose . ' %</strong></span></div>'
-            . '<details><summary><span>⚙ &nbsp; Anlagendetails anzeigen</span><span class="chevron">⌄</span></summary><div class="contents">' . $details . '<div class="alarm"><strong>Alarme &amp; Meldungen</strong><div>' . $esc($alarmText) . '</div></div><div class="notice">Nur Anzeige · Unbekannte Statuscodes bleiben unverändert · Keine Dosiersteuerung</div></div></details>'
+        $html = '<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>' . $css . '</style></head><body class="' . $theme . ($mini ? ' mini-layout' : '') . '"><main class="shell">';
+        if ($mini) {
+            $tileTitle = trim($this->ReadPropertyString('TileTitle'));
+            $html .= '<header class="mini-header"><strong>' . $esc($tileTitle !== '' ? $tileTitle : 'Bayrol PoolAccess') . '</strong><span class="mini-status' . ($online ? '' : ' offline') . '">● ' . ($online ? 'Verbunden' : 'Nicht verbunden') . '</span></header>';
+        } else {
+            $html .= '<header class="header"><div><h1>Bayrol Automatic Cl-pH</h1><div class="subtitle">Poolübersicht · IP-Symcon</div></div><span class="pill"><span class="dot"></span>' . $onlineText . '</span></header>'
+                . '<section class="hero"><div class="device"><img src="' . $esc($productImage) . '" alt="Bayrol Automatic Cl-pH" loading="lazy"></div><div><div class="hero-sub">BAYROL AUTOMATIC</div><div class="hero-title">Wasserqualität</div><div class="hero-foot">● ' . ($online ? 'Anlage verbunden' : 'Keine MQTT-Verbindung') . '</div></div></section>';
+        }
+        $html .= '<section class="metrics">' . $cards . '</section>';
+        if (!$mini) {
+            $html .= '<div class="strip"><span>pH-Dosierung <strong>' . $phDose . ' %</strong></span><span>Redox-Dosierung <strong>' . $rxDose . ' %</strong></span></div>';
+        }
+        $summary = $mini ? 'Details' : '<span>⚙ &nbsp; Anlagendetails anzeigen</span><span class="chevron">⌄</span>';
+        $healthDetails = $mini ? '<div class="notice">' . $esc(implode(' · ', $health)) . '</div>' : '';
+        $html .= '<details><summary>' . $summary . '</summary><div class="contents">' . $healthDetails . $details
+            . '<div class="alarm"><strong>Alarme &amp; Meldungen</strong><div>' . $esc($alarmText) . '</div></div><div class="notice">Nur Anzeige · Unbekannte Statuscodes bleiben unverändert · Keine Dosiersteuerung</div></div></details>'
             . '</main></body></html>';
         $this->SetValue('Dashboard', $html);
     }

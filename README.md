@@ -1,6 +1,6 @@
 # Bayrol PoolAccess – IP-Symcon
 
-![Release](https://img.shields.io/badge/release-v1.0.2-167c9c) ![PHP lint](https://img.shields.io/badge/check-PHP%20syntax-2e9656)
+![Release](https://img.shields.io/badge/release-v1.0.3-167c9c) ![PHP lint](https://img.shields.io/badge/check-PHP%20syntax-2e9656)
 
 **Direkte, lesende Cloud-Anbindung** einer BAYROL Automatic Cl-pH an IP-Symcon via MQTT over WebSocket. Keine externe MQTT-Bridge, kein Home Assistant und kein eigener MQTT-Broker erforderlich.
 
@@ -46,6 +46,8 @@ Ab Version 1.0.2 wird **IP-Symcon 8.2 oder neuer** benötigt.
 | 2. Verbindung | ReadInterval | 300 Sekunden; Grenzen 60–3600 |
 | 2. Verbindung | StaleAfter | 900 Sekunden; Status veralteter Messwerte |
 | 3. Visu | VisualTheme | `light` = Light & Clean / `dark` = Dark & Premium |
+| 3. Visu | VisualLayout | Standard oder Mini-Kachel |
+| 3. Visu | TileTitle | Eigener Titel für die Mini-Kachel. Leer verwendet „Bayrol PoolAccess“. |
 | 4. Diagnose | ShowDiagnostics | Aus. Legt bei Bedarf 20 technische Diagnosevariablen an. |
 
 Die Sichtbarkeit angelegter Diagnosevariablen lässt sich im Objektbaum einstellen. Beim Abschalten werden diese Variablen gelöscht. Beim erneuten Einschalten erhalten sie neue Objekt-IDs. Grundstatus, Messwerte, Zeitstempel und Visu sind unabhängig vom Diagnosemodus. Ab Version 1.0.2 bleibt die laufende MQTT-Verbindung beim Umschalten der Diagnose erhalten.
@@ -71,6 +73,8 @@ Die MQTT-Verbindung ist **MQTT 3.1.1 mit WebSocket-Subprotokoll `mqtt`**, Benutz
 Alte Identifikatoren bleiben für bestehende Automationen und historische Daten erhalten. Ein initiales `0` ist nicht zwangsläufig ein gültiger Messwert; zur Validierung Empfangs-Flags und Zeitstempel prüfen. Rohcodes nicht ohne verlässliche Codeliste übersetzen.
 
 ## Visu
+
+Unter **3 · Visualisierung → Kachellayout** lässt sich die **Mini-Kachel** auswählen. Sie zeigt den Verbindungsstatus und die drei Messwerte auf bis zu 280 px Breite. Dosierung, Alarme und Datenqualität stehen unter **Details**. Der **Titel der Mini-Kachel** lässt sich frei ändern. Bei bestehenden Instanzen bleibt zunächst das Standardlayout ausgewählt.
 
 Ab Version 1.0.1 passt sich die HTMLBox an ihre verfügbare Breite an: eine bis drei Messwertspalten, fluide Größen und umbrechende Texte. Beide Themes und die aufklappbaren Details bleiben erhalten. Schmale oder niedrige Kacheln benötigen bei Bedarf vertikales Scrollen; die Kachelhöhe wird in Symcon eingestellt. Details zu Änderungen und Prüfung: [Responsive Tests](docs/RESPONSIVE-TESTS.md).
 
@@ -103,7 +107,7 @@ Ab Version 1.0.1 passt sich die HTMLBox an ihre verfügbare Breite an: eine bis 
 - PHP-Modul: `BayrolDirectMQTT`, Typ 3 (Device), nativer WS Client als Parent; Module-SDK `IPSModule`.
 - Verwendet öffentlich dokumentierte IP-Symcon-Struktur `library.json`, `module.json`, `module.php`, `form.json` und Datenfluss-GUIDs.
 - Die MQTT-Integration ist nur **lesend**; bestehende Abfragen und Datenmodell wurden bewusst nicht grundlegend umgebaut.
-- **Prüfungen für 1.0.2:** PHP-Syntax, JSON, ZIP und simulierter MQTT-Ablauf mit ein- und ausgeschalteter Diagnose. Der Erstellungsdialog, das Update einer bestehenden Instanz und die Live-Verbindung sind in IP-Symcon praktisch zu prüfen.
+- **Prüfungen für 1.0.3:** PHP-Syntax, JSON, ZIP und simulierter MQTT-Ablauf mit ein- und ausgeschalteter Diagnose. Der Erstellungsdialog, das Update einer bestehenden Instanz und die Live-Verbindung sind in IP-Symcon praktisch zu prüfen.
 - Vorlage für die MQTT-Cloud-Protokollintegration: [tdenolle/bayrol-poolaccess-mqtt](https://github.com/tdenolle/bayrol-poolaccess-mqtt).
 
 Siehe [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [CHANGELOG.md](CHANGELOG.md) und [LICENSE-NOTICE.md](LICENSE-NOTICE.md).

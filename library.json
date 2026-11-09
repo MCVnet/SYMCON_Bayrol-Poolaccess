@@ -1,9 +1,12 @@
 {
   "id": "{328D4246-B308-47C5-B8E4-91EF1A23BC71}",
-  "author": "Matthias Vogel",
+  "author": "Bayrol PoolAccess Symcon Community",
   "name": "Bayrol PoolAccess – Direct MQTT",
   "url": "https://github.com/tdenolle/bayrol-poolaccess-mqtt",
-  "version": "1.0.1",
-  "build": 101,
-  "date": 0
+  "version": "1.0.2",
+  "build": 102,
+  "date": 0,
+  "compatibility": {
+    "version": "8.2"
+  }
 }

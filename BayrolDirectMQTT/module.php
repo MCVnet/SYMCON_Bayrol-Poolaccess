@@ -1,5 +1,5 @@
 <?php
-/** Bayrol MQTT over native IP-Symcon WebSocket client, read only. Version 1.0.0 – direkte, lesende MQTT-Integration mit wählbarem Visu-Design. */
+/** Bayrol MQTT over native IP-Symcon WebSocket client, read only. */
 class BayrolDirectMQTT extends IPSModule
 {
     private const WSC = '{D68FD31F-0E90-7019-F16C-1949BD3079EF}';
@@ -25,16 +25,9 @@ class BayrolDirectMQTT extends IPSModule
         $this->RegisterTimer('Refresh', 0, 'BAYMQ_Refresh($_IPS["TARGET"]);');
         $this->RegisterTimer('KeepAlive', 0, 'BAYMQ_KeepAlive($_IPS["TARGET"]);');
         $this->RegisterTimer('HealthCheck', 0, 'BAYMQ_UpdateDashboard($_IPS["TARGET"]);');
-        // Parent attachment may finish AFTER the first ApplyChanges at instance creation.
-        $this->RegisterTimer('GatewaySetup', 0, 'BAYMQ_ConfigureGateway($_IPS["TARGET"]);');
-        $this->ConnectParent(self::WSC);
         $this->RegisterVariableString('Stage', 'MQTT Diagnosestatus', '', 1);
         $this->RegisterVariableString('Error', 'MQTT Fehler', '', 2);
         $this->RegisterVariableBoolean('Connected', 'MQTT Verbindung hergestellt', '~Switch', 3);
-        $this->RegisterVariableInteger('Messages', 'MQTT Nachrichten (letzter Test)', '', 4);
-        $this->RegisterVariableString('Topics', 'MQTT Topics (gekürzt)', '', 5);
-        $this->RegisterVariableString('LastCheck', 'Letzter Test', '', 6);
-        // Existing diagnostics remain unchanged; measurements start after them.
         $this->RegisterVariableFloat('PH', 'pH-Wert', '', 10);
         $this->RegisterVariableFloat('Redox', 'Redox (mV)', '', 11);
         $this->RegisterVariableFloat('WaterTemperature', 'Wassertemperatur (°C)', '', 12);
@@ -49,27 +42,10 @@ class BayrolDirectMQTT extends IPSModule
         $this->RegisterVariableString('RedoxCanister', 'Redox Kanister (Rohcode)', '', 21);
         $this->RegisterVariableString('Firmware', 'Firmware', '', 22);
         $this->RegisterVariableString('LastMeasurement', 'Letzter Messwertempfang', '', 23);
-        $this->RegisterVariableInteger('Decoded', 'Verarbeitete Werte (letzter Test)', '', 24);
-        $this->RegisterVariableString('Result', 'Ergebnis letzter Abruf', '', 25);
 
-        $this->RegisterVariableString('StreamState', 'Dauerverbindung Status', '', 26);
-        $this->RegisterVariableString('LastPacket', 'Letztes MQTT Paket', '', 27);
-        $this->RegisterVariableString('MeasurementSource', 'Messwertquelle', '', 28);
-        $this->RegisterVariableString('ReadStatus', 'Aktiver MQTT-Abruf Status', '', 30);
-        $this->RegisterVariableString('LastRead', 'Letzte MQTT-Anfrage', '', 31);
-        $this->RegisterVariableInteger('ReadResponseCount', 'Messwertantworten seit Anfrage', '', 32);
         $this->RegisterVariableString('LastPH', 'pH letzte Aktualisierung', '', 33);
         $this->RegisterVariableString('LastRedox', 'Redox letzte Aktualisierung', '', 34);
         $this->RegisterVariableString('LastTemperature', 'Temperatur letzte Aktualisierung', '', 35);
-        $this->RegisterVariableString('ReadAnswers', 'Antworten zur letzten Anfrage', '', 36);
-        $this->RegisterVariableString('ReadMode', 'Automatische Abfrage', '', 37);
-        $this->RegisterVariableString('ReadWireFormat', 'Leseanfrage Sendemodus', '', 38);
-        $this->RegisterVariableInteger('ReadAckCount', 'PUBACK zur letzten Anfrage', '', 39);
-        $this->RegisterVariableString('LastIncomingPublish', 'Letztes eingehendes PUBLISH', '', 40);
-        $this->RegisterVariableString('ReadDiagnostics', 'Abfragediagnose', '', 41);
-        $this->RegisterVariableString('WireDiagnostics', 'MQTT Paketdiagnose (ohne Zugangsdaten)', '', 42);
-        $this->RegisterVariableInteger('OutgoingReads', 'Ausgehende Leseanfragen', '', 43);
-        $this->RegisterVariableInteger('IncomingPublishes', 'Empfangene PUBLISH Pakete', '', 44);
         $this->RegisterVariableString('Dashboard', 'Poolübersicht', '~HTMLBox', 0);
         $this->RegisterVariableString('DataQuality', 'Messwertqualität', '', 7);
         $this->RegisterVariableString('ConnectionHealth', 'Verbindungsüberwachung', '', 8);
@@ -80,31 +56,22 @@ class BayrolDirectMQTT extends IPSModule
     public function ApplyChanges()
     {
         parent::ApplyChanges();
-        // Parent creation/attachment in Symcon is asynchronous relative to Create().
-        // Retry a short time after installation, including when the Bayrol instance is inactive.
-        $this->SetTimerInterval('GatewaySetup', 2000);
-        $this->ConfigureGateway();
         // Remove the obsolete HTTP fallback status variable from upgrades.
         $this->MaintainVariable('HTTPFallbackState', 'HTTP Fallback Status', 3, '', 29, false);
         $this->SetTimerInterval('Refresh', 0);
         $this->SetTimerInterval('HealthCheck', 60000);
-        $diagnostics = ['Messages','Topics','LastCheck','Decoded','Result','StreamState','LastPacket','MeasurementSource','ReadStatus','LastRead','ReadResponseCount','ReadAnswers','ReadMode','ReadWireFormat','ReadAckCount','LastIncomingPublish','ReadDiagnostics','WireDiagnostics','OutgoingReads','IncomingPublishes'];
-        foreach ($diagnostics as $ident) {
-            $id = $this->GetIDForIdent($ident);
-            IPS_SetHidden($id, !$this->ReadPropertyBoolean('ShowDiagnostics'));
-        }
-        // Never remove historical diagnostics or values during an update.
+        $this->MaintainDiagnostics();
         $this->UpdateDashboard();
         $interval = max(60, min(3600, $this->ReadPropertyInteger('ReadInterval')));
         $auto = $this->ReadPropertyBoolean('Active') && $this->ReadPropertyBoolean('ActiveReads');
         $this->SetTimerInterval('ReadMeasurements', $auto ? $interval * 1000 : 0);
-        $this->SetValue('ReadMode', $auto ? 'Aktiv – alle ' . $interval . ' Sekunden' : 'Deaktiviert');
-        $this->SetValue('ReadWireFormat', 'QoS 0, Payload leer (Original-Bridge)');
+        $this->SetDiagnostic('ReadMode', $auto ? 'Aktiv – alle ' . $interval . ' Sekunden' : 'Deaktiviert');
+        $this->SetDiagnostic('ReadWireFormat', 'QoS 0, Payload leer (Original-Bridge)');
         $this->SetTimerInterval('KeepAlive', $this->ReadPropertyBoolean('Active') ? 15000 : 0);
         if (!$this->ReadPropertyBoolean('Active')) {
             $this->SetBuffer('MQTTState', 'offline');
             $this->SetValue('Connected', false);
-            $this->SetValue('StreamState', 'Deaktiviert');
+            $this->SetDiagnostic('StreamState', 'Deaktiviert');
             return;
         }
         $this->SetBuffer('MQTTState', 'waiting');
@@ -112,84 +79,73 @@ class BayrolDirectMQTT extends IPSModule
         $this->SetBuffer('LastMQTTPacket', '0');
         $this->SetBuffer('AutoReadQueued', '0');
         $this->SetBuffer('LastPing', '0');
-        $this->SetValue('StreamState', 'Warte auf WebSocket-Verbindung');
+        $this->SetDiagnostic('StreamState', 'Warte auf WebSocket-Verbindung');
         $this->Refresh();
     }
-    /**
-     * Configure the native WS Client after Symcon has attached the parent.
-     * Public method is also used by the GatewaySetup timer. It is safe to
-     * call repeatedly and does not change custom (foreign-URL) clients.
-     */
-    public function ConfigureGateway(): bool
+    public function GetCompatibleParents(): string
     {
-        $instance = IPS_GetInstance($this->InstanceID);
-        $parentID = (int) ($instance['ConnectionID'] ?? 0);
-        if ($parentID <= 0 || !IPS_InstanceExists($parentID)) {
-            $this->SendDebug('GatewaySetup', 'WS-Client noch nicht verbunden. Erneuter Versuch folgt.', 0);
-            return false;
+        return json_encode([
+            'type' => 'require',
+            'modules' => [
+                [
+                    'moduleID' => self::WSC,
+                    'configuration' => [
+                        'URL' => 'wss://www.bayrol-poolaccess.de:8083',
+                        'Headers' => json_encode([
+                            ['Name' => 'Sec-WebSocket-Protocol', 'Value' => 'mqtt'],
+                        ], JSON_THROW_ON_ERROR),
+                        'Type' => 1,
+                        'VerifyCertificate' => true,
+                    ],
+                    'initial' => ['Active' => true],
+                ],
+            ],
+        ], JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+    }
+
+    private function MaintainDiagnostics(): void
+    {
+        $enabled = $this->ReadPropertyBoolean('ShowDiagnostics');
+        $diagnostics = [
+            ['Messages', 'MQTT Nachrichten (letzter Test)', 1, 4],
+            ['Topics', 'MQTT Topics (gekürzt)', 3, 5],
+            ['LastCheck', 'Letzter Test', 3, 6],
+            ['Decoded', 'Verarbeitete Werte (letzter Test)', 1, 24],
+            ['Result', 'Ergebnis letzter Abruf', 3, 25],
+            ['StreamState', 'Dauerverbindung Status', 3, 26],
+            ['LastPacket', 'Letztes MQTT Paket', 3, 27],
+            ['MeasurementSource', 'Messwertquelle', 3, 28],
+            ['ReadStatus', 'Aktiver MQTT-Abruf Status', 3, 30],
+            ['LastRead', 'Letzte MQTT-Anfrage', 3, 31],
+            ['ReadResponseCount', 'Messwertantworten seit Anfrage', 1, 32],
+            ['ReadAnswers', 'Antworten zur letzten Anfrage', 3, 36],
+            ['ReadMode', 'Automatische Abfrage', 3, 37],
+            ['ReadWireFormat', 'Leseanfrage Sendemodus', 3, 38],
+            ['ReadAckCount', 'PUBACK zur letzten Anfrage', 1, 39],
+            ['LastIncomingPublish', 'Letztes eingehendes PUBLISH', 3, 40],
+            ['ReadDiagnostics', 'Abfragediagnose', 3, 41],
+            ['WireDiagnostics', 'MQTT Paketdiagnose (ohne Zugangsdaten)', 3, 42],
+            ['OutgoingReads', 'Ausgehende Leseanfragen', 1, 43],
+            ['IncomingPublishes', 'Empfangene PUBLISH Pakete', 1, 44],
+        ];
+        foreach ($diagnostics as [$ident, $name, $type, $position]) {
+            $this->MaintainVariable($ident, $name, $type, '', $position, $enabled);
         }
-        $parent = IPS_GetInstance($parentID);
-        if (($parent['ModuleInfo']['ModuleID'] ?? '') !== self::WSC) {
-            $this->SendDebug('GatewaySetup', 'Parent ist kein WS Client. Keine Änderung.', 0);
-            $this->SetTimerInterval('GatewaySetup', 0);
-            return false;
+    }
+
+    private function SetDiagnostic(string $ident, int|string $value): void
+    {
+        if ($this->ReadPropertyBoolean('ShowDiagnostics')) {
+            $this->SetValue($ident, $value);
         }
-        $expected = 'wss://www.bayrol-poolaccess.de:8083';
-        $url = trim((string) IPS_GetProperty($parentID, 'URL'));
-        if ($url !== '' && rtrim($url, '/') !== $expected) {
-            $this->SendDebug('GatewaySetup', 'WS Client nutzt eine andere URL. Bestehende Konfiguration bleibt erhalten.', 0);
-            $this->SetTimerInterval('GatewaySetup', 0);
-            return false;
+    }
+
+    private function GetDiagnosticCounter(string $ident): int
+    {
+        if (!$this->ReadPropertyBoolean('ShowDiagnostics')) {
+            return 0;
         }
-        $changed = false;
-        if ($url === '') {
-            IPS_SetProperty($parentID, 'URL', $expected);
-            $changed = true;
-        }
-        $headers = json_decode((string) IPS_GetProperty($parentID, 'Headers'), true);
-        if (!is_array($headers)) $headers = [];
-        $found = false;
-        foreach ($headers as &$header) {
-            if (is_array($header) && strcasecmp((string) ($header['Name'] ?? ''), 'Sec-WebSocket-Protocol') === 0) {
-                $found = true;
-                if (($header['Value'] ?? '') !== 'mqtt') {
-                    $header['Value'] = 'mqtt';
-                    $changed = true;
-                }
-            }
-        }
-        unset($header);
-        if (!$found) {
-            $headers[] = ['Name' => 'Sec-WebSocket-Protocol', 'Value' => 'mqtt'];
-            $changed = true;
-        }
-        if ($changed) IPS_SetProperty($parentID, 'Headers', json_encode($headers, JSON_UNESCAPED_SLASHES));
-        if ((int) IPS_GetProperty($parentID, 'Type') !== 1) {
-            IPS_SetProperty($parentID, 'Type', 1);
-            $changed = true;
-        }
-        if (!(bool) IPS_GetProperty($parentID, 'VerifyCertificate')) {
-            IPS_SetProperty($parentID, 'VerifyCertificate', true);
-            $changed = true;
-        }
-        if (!(bool) IPS_GetProperty($parentID, 'Active')) {
-            IPS_SetProperty($parentID, 'Active', true);
-            $changed = true;
-        }
-        $name = IPS_GetName($parentID);
-        if (in_array($name, ['MQTT Test', 'WS Client', 'WebSocket Client', 'WebSocket-Client'], true)) {
-            IPS_SetName($parentID, 'Bayrol PoolAccess – WebSocket');
-        }
-        if ($changed) {
-            if (!IPS_ApplyChanges($parentID)) {
-                $this->SendDebug('GatewaySetup', 'WS Client konnte nicht übernommen werden; erneuter Versuch folgt.', 0);
-                return false;
-            }
-        }
-        // The parent is now configured; stop retrying until ApplyChanges next runs.
-        $this->SetTimerInterval('GatewaySetup', 0);
-        $this->SendDebug('GatewaySetup', 'WS Client Konfiguration geprüft (Instanz ' . $parentID . ').', 0);
-        return true;
+        return GetValueInteger($this->GetIDForIdent($ident));
     }
 
     private function sendPacket(string $packet): void
@@ -202,8 +158,8 @@ class BayrolDirectMQTT extends IPSModule
     {
         $this->SetValue('Error', $message);
         $this->SetValue('Stage', 'Fehler: ' . $message);
-        $this->SetValue('StreamState', 'Fehler: ' . $message);
-        $this->SetValue('Result', 'Fehler: ' . $message);
+        $this->SetDiagnostic('StreamState', 'Fehler: ' . $message);
+        $this->SetDiagnostic('Result', 'Fehler: ' . $message);
         $this->SetValue('Connected', false);
         return false;
     }
@@ -217,7 +173,7 @@ class BayrolDirectMQTT extends IPSModule
         // Wildcard is generated from the validated serial; the old field is ignored.
         if (!$this->HasActiveParent()) return $this->errorState('WebSocket-Client nicht verbunden. URL und Aktivierung prüfen.');
         if ($this->GetBuffer('MQTTState') === 'subscribed') {
-            $this->SetValue('Result', 'Dauerempfang läuft bereits; neue Nachrichten werden automatisch übernommen.');
+            $this->SetDiagnostic('Result', 'Dauerempfang läuft bereits; neue Nachrichten werden automatisch übernommen.');
             return true;
         }
         // Match app/mqtt/MqttClient.py and PoolAccessClient.py from the upstream bridge:
@@ -232,9 +188,9 @@ class BayrolDirectMQTT extends IPSModule
         $this->SetBuffer('MQTTState', 'connecting');
         $this->SetBuffer('AutoReadQueued', '0');
         $this->SetBuffer('LastPing', (string)time());
-        $this->SetValue('StreamState', 'MQTT CONNECT gesendet; warte auf CONNACK');
-        $this->SetValue('Result', 'MQTT-Anmeldung läuft über WebSocket.');
-        $this->SetValue('LastCheck', date('c'));
+        $this->SetDiagnostic('StreamState', 'MQTT CONNECT gesendet; warte auf CONNACK');
+        $this->SetDiagnostic('Result', 'MQTT-Anmeldung läuft über WebSocket.');
+        $this->SetDiagnostic('LastCheck', date('c'));
         $this->sendPacket($this->mqttPacket(0x10, $connect));
         return true;
     }
@@ -244,7 +200,7 @@ class BayrolDirectMQTT extends IPSModule
         if (!$this->HasActiveParent()) {
             $this->SetBuffer('MQTTState', 'waiting');
             $this->SetValue('Connected', false);
-            $this->SetValue('StreamState', 'WebSocket offline – Symcon übernimmt Wiederverbindung');
+            $this->SetDiagnostic('StreamState', 'WebSocket offline – Symcon übernimmt Wiederverbindung');
             return;
         }
         $state = $this->GetBuffer('MQTTState');
@@ -257,7 +213,7 @@ class BayrolDirectMQTT extends IPSModule
             return;
         }
         if ($now - (int)$this->GetBuffer('LastMQTTPacket') > 60) {
-            $this->SetValue('StreamState', 'Keine MQTT-Antwort seit über 60 s; erneuter Verbindungsaufbau erforderlich');
+            $this->SetDiagnostic('StreamState', 'Keine MQTT-Antwort seit über 60 s; erneuter Verbindungsaufbau erforderlich');
             $this->SetBuffer('MQTTState', 'waiting');
             $this->SetValue('Connected', false);
             $this->Refresh();
@@ -280,7 +236,7 @@ class BayrolDirectMQTT extends IPSModule
             foreach ($packets as [$header, $body]) {
                 $type = $header >> 4;
                 $this->SetBuffer('LastMQTTPacket', (string)time());
-                $this->SetValue('LastPacket', date('c') . ' (Typ ' . $type . ')');
+                $this->SetDiagnostic('LastPacket', date('c') . ' (Typ ' . $type . ')');
                 if ($type === 2) {
                     if (strlen($body) < 2 || ord($body[1]) !== 0) { $this->errorState('CONNACK abgelehnt'); continue; }
                     $this->SetBuffer('MQTTState', 'subscribing');
@@ -290,7 +246,7 @@ class BayrolDirectMQTT extends IPSModule
                     $this->sendPacket($subscribe);
                     // Upstream PoolAccessMqttBridge.on_poolaccess_connect() sends GETs
                     // immediately after subscribe(), before any SUBACK callback.
-                    $this->SetValue('WireDiagnostics', 'CONNECT akzeptiert; SUBSCRIBE gesendet (' . strlen($subscribe) . ' Bytes)');
+                    $this->SetDiagnostic('WireDiagnostics', 'CONNECT akzeptiert; SUBSCRIBE gesendet (' . strlen($subscribe) . ' Bytes)');
                     if ($this->ReadPropertyBoolean('ActiveReads')) {
                         $this->SetBuffer('AutoReadQueued', '1');
                         $this->RequestMeasurements();
@@ -301,17 +257,17 @@ class BayrolDirectMQTT extends IPSModule
                     $this->SetValue('Connected', true);
                     $this->SetValue('Error', '');
                     $this->SetValue('Stage', 'MQTT verbunden, Subscription bestätigt');
-                    $this->SetValue('StreamState', 'Dauerempfang aktiv');
+                    $this->SetDiagnostic('StreamState', 'Dauerempfang aktiv');
                     $this->UpdateDashboard();
-                    $this->SetValue('Result', 'MQTT-Verbindung und Subscription erfolgreich. Dauerempfang aktiv.');
-                    $this->SetValue('WireDiagnostics', 'SUBACK bestätigt; Initialabfragen ' . ($this->GetBuffer('AutoReadQueued') === '1' ? 'bereits vor SUBACK gesendet' : 'nicht gesendet'));
+                    $this->SetDiagnostic('Result', 'MQTT-Verbindung und Subscription erfolgreich. Dauerempfang aktiv.');
+                    $this->SetDiagnostic('WireDiagnostics', 'SUBACK bestätigt; Initialabfragen ' . ($this->GetBuffer('AutoReadQueued') === '1' ? 'bereits vor SUBACK gesendet' : 'nicht gesendet'));
                 } elseif ($type === 4 && strlen($body) >= 2) {
                     $pid = unpack('n', substr($body, 0, 2))[1];
                     $sent = json_decode($this->GetBuffer('ReadPacketIds'), true);
                     if (is_array($sent) && in_array($pid, $sent, true)) {
-                        $count = GetValueInteger($this->GetIDForIdent('ReadAckCount')) + 1;
-                        $this->SetValue('ReadAckCount', $count);
-                        $this->SetValue('ReadDiagnostics', 'PUBACK: ' . $count . ' / ' . count($sent) . '; Messwertantworten: ' . GetValueInteger($this->GetIDForIdent('ReadResponseCount')));
+                        $count = $this->GetDiagnosticCounter('ReadAckCount') + 1;
+                        $this->SetDiagnostic('ReadAckCount', $count);
+                        $this->SetDiagnostic('ReadDiagnostics', 'PUBACK: ' . $count . ' / ' . count($sent) . '; Messwertantworten: ' . $this->GetDiagnosticCounter('ReadResponseCount'));
                     }
                 } elseif ($type === 3 && strlen($body) >= 2) {
                     $len = unpack('n', substr($body, 0, 2))[1];
@@ -323,13 +279,13 @@ class BayrolDirectMQTT extends IPSModule
                     $pid = 0;
                     if ($qos > 0) { if (strlen($body) < $offset + 2) continue; $pid = unpack('n', substr($body, $offset, 2))[1]; $offset += 2; }
                     $payload = substr($body, $offset);
-                    $this->SetValue('LastIncomingPublish', date('c') . ' ' . substr($topic, 0, 180));
-                    $this->SetValue('IncomingPublishes', GetValueInteger($this->GetIDForIdent('IncomingPublishes')) + 1);
-                    $this->SetValue('WireDiagnostics', 'PUBLISH empfangen: ' . substr($topic, 0, 160) . ', Nutzlast ' . strlen($payload) . ' Bytes, QoS ' . $qos);
-                    $this->SetValue('Messages', GetValueInteger($this->GetIDForIdent('Messages')) + 1);
-                    $this->SetValue('Topics', substr($topic, 0, 180));
+                    $this->SetDiagnostic('LastIncomingPublish', date('c') . ' ' . substr($topic, 0, 180));
+                    $this->SetDiagnostic('IncomingPublishes', $this->GetDiagnosticCounter('IncomingPublishes') + 1);
+                    $this->SetDiagnostic('WireDiagnostics', 'PUBLISH empfangen: ' . substr($topic, 0, 160) . ', Nutzlast ' . strlen($payload) . ' Bytes, QoS ' . $qos);
+                    $this->SetDiagnostic('Messages', $this->GetDiagnosticCounter('Messages') + 1);
+                    $this->SetDiagnostic('Topics', substr($topic, 0, 180));
                     if ($this->processMeasurement($topic, $payload, trim($this->ReadPropertyString('DeviceSerial')))) {
-                        $this->SetValue('Decoded', GetValueInteger($this->GetIDForIdent('Decoded')) + 1);
+                        $this->SetDiagnostic('Decoded', $this->GetDiagnosticCounter('Decoded') + 1);
                         $this->UpdateDashboard();
                         $received = (int)$this->GetBuffer('LastReadEpoch');
                         if ($received > 0 && time() - $received < 120) {
@@ -339,11 +295,11 @@ class BayrolDirectMQTT extends IPSModule
                             if (!in_array($code, $seen, true)) {
                                 $seen[] = $code;
                                 $this->SetBuffer('ReadSeen', json_encode($seen));
-                                $this->SetValue('ReadResponseCount', count($seen));
-                                $this->SetValue('ReadAnswers', implode(', ', $seen));
+                                $this->SetDiagnostic('ReadResponseCount', count($seen));
+                                $this->SetDiagnostic('ReadAnswers', implode(', ', $seen));
                             }
-                            $this->SetValue('ReadStatus', 'Anfrage aktiv: ' . count($seen) . ' unterschiedliche Antworten empfangen');
-                            $this->SetValue('ReadDiagnostics', 'Messwertantworten: ' . count($seen) . '; PUBACK: ' . GetValueInteger($this->GetIDForIdent('ReadAckCount')));
+                            $this->SetDiagnostic('ReadStatus', 'Anfrage aktiv: ' . count($seen) . ' unterschiedliche Antworten empfangen');
+                            $this->SetDiagnostic('ReadDiagnostics', 'Messwertantworten: ' . count($seen) . '; PUBACK: ' . $this->GetDiagnosticCounter('ReadAckCount'));
                         }
                     }
                     if ($qos === 1) $this->sendPacket($this->mqttPacket(0x40, pack('n', $pid)));
@@ -359,25 +315,25 @@ class BayrolDirectMQTT extends IPSModule
     public function RequestMeasurements(): bool
     {
         if (!$this->ReadPropertyBoolean('Active') || !in_array($this->GetBuffer('MQTTState'), ['subscribed', 'subscribing'], true) || !$this->HasActiveParent()) {
-            $this->SetValue('ReadStatus', 'Nicht gesendet: MQTT nicht angemeldet/abonniert');
+            $this->SetDiagnostic('ReadStatus', 'Nicht gesendet: MQTT nicht angemeldet/abonniert');
             return false;
         }
         $serial = trim($this->ReadPropertyString('DeviceSerial'));
         if (!preg_match('/^[A-Za-z0-9-]{4,64}$/D', $serial)) {
-            $this->SetValue('ReadStatus', 'Ungültige Geräte-Seriennummer');
+            $this->SetDiagnostic('ReadStatus', 'Ungültige Geräte-Seriennummer');
             return false;
         }
         // Read-only property identifiers confirmed by HAS log.
         $codes = ['4.78', '4.82', '4.98', '4.89', '4.90', '1', '10', '5.29', '5.42', '5.154', '5.80', '5.169', '6.15'];
-        $this->SetValue('ReadResponseCount', 0);
-        $this->SetValue('ReadAnswers', 'Noch keine Antworten auf diese Anfrage');
+        $this->SetDiagnostic('ReadResponseCount', 0);
+        $this->SetDiagnostic('ReadAnswers', 'Noch keine Antworten auf diese Anfrage');
         $this->SetBuffer('ReadSeen', '[]');
         $this->SetBuffer('LastReadEpoch', (string)time());
         $qos = 0; // Upstream client.publish(topic) defaults to QoS 0.
         $payloadMode = 'empty';
         $payload = ''; // Upstream client.publish(topic) defaults payload=None.
         $packetIds = [];
-        $this->SetValue('ReadAckCount', 0);
+        $this->SetDiagnostic('ReadAckCount', 0);
         foreach ($codes as $code) {
             // Only known GET topics. QoS and payload are configurable for protocol validation.
             // Retain is NEVER set; no command (/s/) topic can be published here.
@@ -392,12 +348,12 @@ class BayrolDirectMQTT extends IPSModule
             $this->sendPacket($this->mqttPacket($qos ? 0x32 : 0x30, $this->mqttString($topic) . $idPart . $payload));
         }
         $this->SetBuffer('ReadPacketIds', json_encode($packetIds));
-        $this->SetValue('ReadWireFormat', 'QoS ' . $qos . ', Payload ' . ($payloadMode === 'json' ? '{}': 'leer'));
-        $this->SetValue('ReadDiagnostics', 'Anfragen: ' . count($codes) . '; QoS 0; Payload leer; PUBACK bei QoS 0 nicht vorgesehen; Antworten: 0');
-        $this->SetValue('LastRead', date('c'));
-        $this->SetValue('ReadStatus', 'Anfragen gesendet: ' . count($codes) . ' Lese-Topics (QoS ' . $qos . '); warte auf Antworten');
-        $this->SetValue('OutgoingReads', GetValueInteger($this->GetIDForIdent('OutgoingReads')) + count($codes));
-        $this->SetValue('WireDiagnostics', count($codes) . ' GET-PUBLISH versendet: QoS 0, leere Payload, Retain 0; MQTT-Status ' . $this->GetBuffer('MQTTState'));
+        $this->SetDiagnostic('ReadWireFormat', 'QoS ' . $qos . ', Payload ' . ($payloadMode === 'json' ? '{}': 'leer'));
+        $this->SetDiagnostic('ReadDiagnostics', 'Anfragen: ' . count($codes) . '; QoS 0; Payload leer; PUBACK bei QoS 0 nicht vorgesehen; Antworten: 0');
+        $this->SetDiagnostic('LastRead', date('c'));
+        $this->SetDiagnostic('ReadStatus', 'Anfragen gesendet: ' . count($codes) . ' Lese-Topics (QoS ' . $qos . '); warte auf Antworten');
+        $this->SetDiagnostic('OutgoingReads', $this->GetDiagnosticCounter('OutgoingReads') + count($codes));
+        $this->SetDiagnostic('WireDiagnostics', count($codes) . ' GET-PUBLISH versendet: QoS 0, leere Payload, Retain 0; MQTT-Status ' . $this->GetBuffer('MQTTState'));
         return true;
     }
     private function mqttString(string $value): string { return pack('n', strlen($value)) . $value; }
@@ -439,13 +395,13 @@ class BayrolDirectMQTT extends IPSModule
         switch ($code) {
             case '4.78':
                 if (!$numeric || (float)$v < 0 || (float)$v > 140) return false;
-                $this->SetValue('PH', round((float)$v / 10.0, 2)); $this->SetValue('LastPH', date('c')); $this->SetValue('HasPH', true); $this->SetValue('MeasurementSource', 'MQTT – pH aktualisiert'); break;
+                $this->SetValue('PH', round((float)$v / 10.0, 2)); $this->SetValue('LastPH', date('c')); $this->SetValue('HasPH', true); $this->SetDiagnostic('MeasurementSource', 'MQTT – pH aktualisiert'); break;
             case '4.82':
                 if (!$numeric || (float)$v < 0 || (float)$v > 1500) return false;
-                $this->SetValue('Redox', (float)$v); $this->SetValue('LastRedox', date('c')); $this->SetValue('HasRedox', true); $this->SetValue('MeasurementSource', 'MQTT – Redox aktualisiert'); break;
+                $this->SetValue('Redox', (float)$v); $this->SetValue('LastRedox', date('c')); $this->SetValue('HasRedox', true); $this->SetDiagnostic('MeasurementSource', 'MQTT – Redox aktualisiert'); break;
             case '4.98':
                 if (!$numeric || (float)$v < -200 || (float)$v > 800) return false;
-                $this->SetValue('WaterTemperature', round((float)$v / 10.0, 2)); $this->SetValue('LastTemperature', date('c')); $this->SetValue('HasTemperature', true); $this->SetValue('MeasurementSource', 'MQTT – Temperatur aktualisiert'); break;
+                $this->SetValue('WaterTemperature', round((float)$v / 10.0, 2)); $this->SetValue('LastTemperature', date('c')); $this->SetValue('HasTemperature', true); $this->SetDiagnostic('MeasurementSource', 'MQTT – Temperatur aktualisiert'); break;
             case '4.89': case '4.90':
                 if (!$numeric || (float)$v < 0 || (float)$v > 100) return false;
                 $this->SetValue($code === '4.89' ? 'PHDoseRate' : 'RedoxDoseRate', (int)round((float)$v)); break;

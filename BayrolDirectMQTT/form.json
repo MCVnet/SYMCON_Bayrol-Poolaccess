@@ -82,7 +82,7 @@
         {
           "type": "CheckBox",
           "name": "ShowDiagnostics",
-          "caption": "Technische Diagnosevariablen anzeigen"
+          "caption": "Technische Diagnosevariablen anlegen (beim Abschalten werden sie gelöscht)"
         },
         {
           "type": "Label",

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.2 (2026-11-09)
+
+- Die Management-Konsole wählt oder erstellt den WS Client anhand von `GetCompatibleParents()`. Mindestversion ist IP-Symcon 8.2.
+- Die 20 optionalen Diagnosevariablen werden mit `MaintainVariable()` angelegt und beim Abschalten der Diagnose gelöscht. Die Sichtbarkeit vorhandener Variablen lässt sich im Objektbaum einstellen.
+- Regressionstest für die Parent-Anforderung, den Diagnosewechsel und den simulierten MQTT-Ablauf ergänzt.
+
 ## 1.0.1 (2026-11-07)
 
 - HTMLBox für schmale Symcon-Kacheln, Smartphones, Tablets und Desktop überarbeitet.
